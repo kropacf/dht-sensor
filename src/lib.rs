@@ -53,14 +53,14 @@
 //!
 //!     // An `Output<OpenDrain>` is both `InputPin` and `OutputPin`
 //!     let mut pa1 = cortex_m::interrupt::free(|cs| pa1.into_open_drain_output(cs));
-//!     
+//!
 //!     // Pulling the pin high to avoid confusing the sensor when initializing
 //!     pa1.set_high().ok();
 //!
 //!     // The DHT11 datasheet suggests 1 second
 //!     hprintln!("Waiting on the sensor...").unwrap();
 //!     delay.delay_ms(1000_u16);
-//!     
+//!
 //!     loop {
 //!         match dht11::Reading::read(&mut delay, &mut pa1) {
 //!             Ok(dht11::Reading {
@@ -69,9 +69,9 @@
 //!             }) => hprintln!("{}°, {}% RH", temperature, relative_humidity).unwrap(),
 //!             Err(e) => hprintln!("Error {:?}", e).unwrap(),
 //!         }
-//!         
+//!
 //!         // Delay of at least 500ms before polling the sensor again, 1 second or more advised
-//!         delay.delay_ms(500_u16);  
+//!         delay.delay_ms(500_u16);
 //!     }
 //! }
 //! ```
@@ -83,66 +83,66 @@ pub use read::{Delay, DhtError, InputOutputPin};
 #[cfg(feature = "async")]
 use embedded_hal_async::delay::DelayUs;
 
-pub mod dht11 {
-    use super::*;
-
-    #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-    pub struct Reading {
-        pub temperature: i8,
-        pub relative_humidity: u8,
-    }
-
-    #[cfg(not(feature = "async"))]
-    pub fn read<E>(
-        delay: &mut impl Delay,
-        pin: &mut impl InputOutputPin<E>,
-    ) -> Result<Reading, read::DhtError<E>> {
-        pin.set_low()?;
-        delay.delay_ms(18);
-        read::read_raw(delay, pin).map(raw_to_reading)
-    }
-
-    #[cfg(feature = "async")]
-    pub async fn read<E>(
-        delay: &mut (impl Delay + DelayUs),
-        pin: &mut impl InputOutputPin<E>,
-    ) -> Result<Reading, read::DhtError<E>> {
-        pin.set_low()?;
-        DelayUs::delay_ms(delay, 18).await;
-        read::read_raw(delay, pin).map(raw_to_reading)
-    }
-
-    fn raw_to_reading(bytes: [u8; 4]) -> Reading {
-        let [relative_humidity, _, temp_signed, _] = bytes;
-        let temperature = {
-            let (signed, magnitude) = convert_signed(temp_signed);
-            let temp_sign = if signed { -1 } else { 1 };
-            temp_sign * magnitude as i8
-        };
-        Reading {
-            temperature,
-            relative_humidity,
-        }
-    }
-
-    #[test]
-    fn test_raw_to_reading() {
-        assert_eq!(
-            raw_to_reading([0x32, 0, 0x1B, 0]),
-            Reading {
-                temperature: 27,
-                relative_humidity: 50
-            }
-        );
-        assert_eq!(
-            raw_to_reading([0x80, 0, 0x83, 0]),
-            Reading {
-                temperature: -3,
-                relative_humidity: 128
-            }
-        );
-    }
-}
+// pub mod dht11 {
+//     use super::*;
+//
+//     #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+//     pub struct Reading {
+//         pub temperature: i8,
+//         pub relative_humidity: u8,
+//     }
+//
+//     #[cfg(not(feature = "async"))]
+//     pub fn read<E>(
+//         delay: &mut impl Delay,
+//         pin: &mut impl InputOutputPin<E>,
+//     ) -> Result<Reading, read::DhtError<E>> {
+//         pin.set_low()?;
+//         delay.delay_ms(18);
+//         read::read_raw(delay, pin).map(raw_to_reading)
+//     }
+//
+//     #[cfg(feature = "async")]
+//     pub async fn read<E>(
+//         delay: &mut (impl Delay + DelayUs),
+//         pin: &mut impl InputOutputPin<E>,
+//     ) -> Result<Reading, read::DhtError<E>> {
+//         pin.set_low()?;
+//         DelayUs::delay_ms(delay, 18).await;
+//         read::read_raw(delay, pin).map(raw_to_reading)
+//     }
+//
+//     fn raw_to_reading(bytes: [u8; 4]) -> Reading {
+//         let [relative_humidity, _, temp_signed, _] = bytes;
+//         let temperature = {
+//             let (signed, magnitude) = convert_signed(temp_signed);
+//             let temp_sign = if signed { -1 } else { 1 };
+//             temp_sign * magnitude as i8
+//         };
+//         Reading {
+//             temperature,
+//             relative_humidity,
+//         }
+//     }
+//
+//     #[test]
+//     fn test_raw_to_reading() {
+//         assert_eq!(
+//             raw_to_reading([0x32, 0, 0x1B, 0]),
+//             Reading {
+//                 temperature: 27,
+//                 relative_humidity: 50
+//             }
+//         );
+//         assert_eq!(
+//             raw_to_reading([0x80, 0, 0x83, 0]),
+//             Reading {
+//                 temperature: -3,
+//                 relative_humidity: 128
+//             }
+//         );
+//     }
+// }
 
 pub mod dht22 {
     use super::*;
